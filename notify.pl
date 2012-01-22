@@ -61,6 +61,10 @@ sub message_private_notify {
     my ($server, $msg, $nick, $address) = @_;
 
     return if (!$server);
+
+    # don't send notification if the message originates from the current window
+    return if (Irssi::active_win()->{active}->{visible_name} eq $nick);
+
     notify($server, "Private message from ".$nick, $msg);
 }
 
