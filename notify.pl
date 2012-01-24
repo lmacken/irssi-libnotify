@@ -23,6 +23,11 @@ $VERSION = "0.01";
 Irssi::settings_add_str('notify', 'notify_icon', 'gtk-dialog-info');
 Irssi::settings_add_str('notify', 'notify_time', '5000');
 
+# Send no more than one notification within the threshold interval (seconds)
+Irssi::settings_add_int('notify', 'notify_threshold', 15);
+
+my $last_notify_time = time();
+
 sub sanitize {
   my ($text) = @_;
   encode_entities($text);
@@ -61,7 +66,16 @@ sub message_private_notify {
     my ($server, $msg, $nick, $address) = @_;
 
     return if (!$server);
+
+    # don't send notification if the message originates from the current window
+    return if (Irssi::active_win()->{active}->{visible_name} eq $nick);
+
+    # throttle notifications by the configured number of seconds
+    return if ((time() - $last_notify_time) <
+        Irssi::settings_get_int('notify_threshold'));
+
     notify($server, "Private message from ".$nick, $msg);
+    $last_notify_time = time();
 }
 
 sub dcc_request_notify {
